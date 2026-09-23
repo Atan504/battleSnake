@@ -4,18 +4,16 @@ from api import *
 def manhattan_distance(coord, coord2):
     return abs(coord[0] - coord2[0]) + abs(coord[1] - coord2[1])
 
-
 def get_moves(head):
-    x, y = head
-    return {"U": (x, y + 1), "D": (x, y - 1), "L": (x - 1, y), "R": (x + 1, y)}
-
+        x, y = head
+        return {"U": (x, y + 1), "D": (x, y - 1), "L": (x - 1, y), "R": (x + 1, y)}
 
 class MyBot(CodeBattlesBot):
     times = []
     me = None
     my_head = None
     step_start_time = None
-    direction_to_letter = {(0, -1): "D", (0, 1): "U", (1, 0): "R", (-1, 0): "L"}
+    direction_to_letter = {(0,-1): "D", (0,1): "U", (1,0): "R", (-1,0): "L"}
 
     def is_valid(self, tile: tuple[int, int]):
         return not (tile in self.context.get_occupied_tiles() or not self.context.in_bounds(tile))
@@ -23,6 +21,7 @@ class MyBot(CodeBattlesBot):
     def get_kill_tiles(self):
         return [get_moves(player.head).values() for player in self.context.get_active_players() if player.length < self.context.get_myself().length]
 
+    
     def get_non_killing_occupied_tiles(self):
         return [tile for tile in self.context.get_occupied_tiles() if tile not in self.get_kill_tiles()]
 
@@ -53,6 +52,7 @@ class MyBot(CodeBattlesBot):
         x, y = self.my_head
         return {"U": (x, y + 1), "D": (x, y - 1), "L": (x - 1, y), "R": (x + 1, y)}
 
+    
     def get_all_options_by_tile(self, tile: tuple[int, int]):
         # returns all coordinates for next move
         x, y = tile
@@ -68,9 +68,14 @@ class MyBot(CodeBattlesBot):
         for dir, weight in d.items():
             s += weight
         for dir, weight in d.items():
-            r[dir] = weight / s * 500
+            if s==0:
+                r[dir]=1
+            else:
+                r[dir] = weight / s * 40
         return r
 
+
+    
     def calc_weight(self, tile: tuple[int, int], turn):
         if turn == 0:
             return 1 if self.is_valid(tile) else 0
@@ -79,6 +84,7 @@ class MyBot(CodeBattlesBot):
             if self.is_valid(op):
                 weight += self.calc_weight(op, turn - 1)
         return weight
+
 
     def initialize_variables(self):
         # helper function to set variables that will not change during the step
@@ -89,7 +95,8 @@ class MyBot(CodeBattlesBot):
     def run(self) -> None:
         self.initialize_variables()
 
-        direction_weights = self.get_dir_weights(4)
+        direction_weights = self.get_dir_weights(5)
+        #self.context.log_info(str(len(direction_weights)))
         direction = self.make_move(direction_weights)
         move = self.direction_to_letter[direction]
         self.context.set_direction(move)
@@ -100,55 +107,56 @@ class MyBot(CodeBattlesBot):
             average = sum(self.times) / len(self.times)
             self.context.log_info(f"average time per turn : {average}")
 
+    
+
     def find_closest_apple(self):
         apples = self.context.get_apples()
-        dists = [manhattan_distance(apples[i], self.my_head) for i in range(len(apples))]
+        dists = [manhattan_distance(apples[i],self.my_head) for i in range(len(apples))]
         best_apple_index = dists.index(min(dists))
         return apples[best_apple_index]
 
-    def make_move(self, direction_weights):
-        if self.context.get_myself().health < 81:
+    def make_move(self,direction_weights):
+        if self.context.get_myself().health<81:
             return self.move_to_eat(direction_weights)
         else:
-            pos = [6, 6]
-            if self.my_head == (6, 6):
-                pos = random.choice([(6, 5), (5, 6), (5, 5), (6, 7), (7, 6)])
-            return self.move_to_pos(pos, direction_weights)
-
-    def move_to_pos(self, cords, direction_weights):
+            pos = [6,6]
+            if self.my_head==(6,6):
+                pos=random.choice([(6,5),(5,6),(5,5),(6,7),(7,6)])
+            return self.move_to_pos(pos,direction_weights)
+    
+    def move_to_pos(self,cords,direction_weights):
         x_direction = cords[0] - self.my_head[0]
         y_direction = cords[1] - self.my_head[1]
-        HEALTH_FACTOR = 1 / 2 + (50 / self.me.health) ** 5
+        HEALTH_FACTOR = 1/2+(50/self.me.health)**5
 
-        # update weights
-        if x_direction != 0:
-            x_move = (x_direction // abs(x_direction), 0)
-            if self.direction_to_letter[x_move] in direction_weights:
-                direction_weights[self.direction_to_letter[x_move]] += abs(x_direction)
-                direction_weights[self.direction_to_letter[x_move]] *= HEALTH_FACTOR
-
-        if y_direction != 0:
-            y_move = (y_direction // abs(y_direction), 0)
-            if self.direction_to_letter[y_move] in direction_weights:
-                direction_weights[self.direction_to_letter[y_move]] += abs(y_direction)
-                direction_weights[self.direction_to_letter[y_move]] *= HEALTH_FACTOR
+        #update weights
+        if x_direction!=0:
+            x_move = (x_direction//abs(x_direction),0)
+            if direction_weights[self.direction_to_letter[x_move]]!=0:
+                direction_weights[self.direction_to_letter[x_move]]+=abs(x_direction)
+                direction_weights[self.direction_to_letter[x_move]]*=HEALTH_FACTOR
+        
+        if y_direction!=0:
+            y_move = (y_direction//abs(y_direction),0)
+            if direction_weights[self.direction_to_letter[y_move]]!=0:
+                direction_weights[self.direction_to_letter[y_move]]+=abs(y_direction)
+                direction_weights[self.direction_to_letter[y_move]]*=HEALTH_FACTOR
 
         options = self.get_available_options()
-        directions = []
+        directions=[]
+        """
         for i in range(len(options)):
-            directions.append((options[i][0] - self.my_head[0], options[i][1] - self.my_head[1]))
-        # check if we need only 1 direction to go
-
-        weight = []
+            directions.append((options[i][0]-self.my_head[0],options[i][1]-self.my_head[1]))
+        """
+        #check if we need only 1 direction to go
+        directions = [(1,0),(-1,0),(0,1),(0,-1)]
+        weight=[]
         for direction in directions:
             weight.append(direction_weights[self.direction_to_letter[direction]])
-        if len(directions) == 0:
-            return random.choice(list(direction_weights.keys()))
-        self.context.log_info(str(len(directions)) + " " + str(len(weight)))
-        return random.choices(directions, weights=weight, k=1)[0]
+        return random.choices(directions,weights=weight,k=1)[0]
 
-    def move_to_eat(self, direction_weights):
-        return self.move_to_pos(self.find_closest_apple(), direction_weights)
-
+    def move_to_eat(self,direction_weights):
+        return self.move_to_pos(self.find_closest_apple(),direction_weights)
+    
     def setup(self) -> None:
         pass
