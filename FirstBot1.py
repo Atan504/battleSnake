@@ -11,6 +11,38 @@ class MyBot(CodeBattlesBot):
     my_head = None
     step_start_time = None
 
+    def get_all_opponents(self):
+        return [op for op in self.context.get_active_players() if not op is self.me]
+
+    def _get_all_options_by_turn(self, start: tuple[int, int], turn: int):
+        if turn == 0:
+            return {}
+        x, y = start
+        return self._get_all_options_by_turn((x + 1, y), turn - 1) + self._get_all_options_by_turn((x - 1, y), turn - 1) + self._get_all_options_by_turn((x, y + 1), turn - 1) + self._get_all_options_by_turn((x, y - 1), turn - 1)
+
+    def _get_all_opponents_tiles_by_turn(self, turn):
+        tiles = {}
+        for op in self.get_all_opponents():
+            tiles += self._get_all_options_by_turn(op.head, turn)
+
+    def is_valid_tile(self, tile: tuple(int, int), turn: int):
+        if tile in self._get_all_opponents_tiles_by_turn(turn) or not self.context.in_bounds(coord) or coord == self.get_tail_direction()[1]:
+            return False
+        return True
+
+    def _get_all_available_by_turn(self, turn: int, options: dict[str : list[tuple[int, int]]]):
+        if turn == 0:
+            for dir, tiles in options:
+                if len(tiles) != 0:
+                    return options
+
+        temp = {}
+        for dir, tiles in options:
+            for tile in tiles:
+                if self.is_valid_tile(tile):
+                    temp += [cords for dir, cords in self._get_all_available_by_turn(turn - 1, options)]
+            options[dir] += list(temp)
+
     def get_kill_tiles(self):
         return [player.head for player in self.context.get_active_players() if player.length < self.context.get_myself().length]
 
@@ -36,12 +68,15 @@ class MyBot(CodeBattlesBot):
                 to_del.append(direction)
         for direction in to_del:
             del options[direction]
-
         return options  # .values()
 
     def get_all_options(self):
         # returns all coordinates for next move
         x, y = self.my_head
+        return {"U": (x, y + 1), "D": (x, y - 1), "L": (x - 1, y), "R": (x + 1, y)}
+
+    def get_all_player_options(self, tile: tuple[int, int]):
+        x, y = tile
         return {"U": (x, y + 1), "D": (x, y - 1), "L": (x - 1, y), "R": (x + 1, y)}
 
     def initialize_variables(self):
@@ -59,7 +94,7 @@ class MyBot(CodeBattlesBot):
             # takes the a random available option which should not kill him
             move = list(options.keys())[random.randint(0, len(options) - 1)]
         self.context.set_direction(move)
-
+        self.context.log_info("this: " + self._get_all_available_by_turn(2, self.get_all_opponents()))
         self.times.append(time.time() - self.step_start_time)
         # prints the average time every 100 steps:
         if len(self.times) % 100 == 0:
