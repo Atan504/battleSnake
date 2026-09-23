@@ -67,7 +67,13 @@ class MyBot(CodeBattlesBot):
         for dir, tile in self.get_all_options().items():
             if self.is_valid(tile):
                 d[dir] = self.calc_weight(tile, turn)
-        return d
+        r = {}
+        s = 0
+        for dir, weight in d.items():
+            s += weight
+        for dir, weight in d.items():
+            r[dir] = weight / s
+        return r
 
     def initialize_variables(self):
         # helper function to set variables that will not change during the step
@@ -81,7 +87,7 @@ class MyBot(CodeBattlesBot):
         direction = self.move_to_eat()
         move = self.direction_to_letter[direction]
         self.context.set_direction(move)
-        self.context.log_info(str(self.get_dir_weights(3)))
+        self.context.log_info(str(self.get_dir_weights(5)))
         self.times.append(time.time() - self.step_start_time)
         # prints the average time every 100 steps:
         if len(self.times) % 100 == 0:
