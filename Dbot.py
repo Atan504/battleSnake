@@ -13,9 +13,7 @@ class MyBot(CodeBattlesBot):
     direction_to_letter = {(0, -1): "D", (0, 1): "U", (1, 0): "R", (-1, 0): "L"}
 
     def is_valid(self, tile: tuple[int, int]):
-        if tile in self.context.get_occupied_tiles() or not self.context.in_bounds(tile):
-            return False
-        return True
+        return not (tile in self.context.get_occupied_tiles() or not self.context.in_bounds(tile))
 
     def get_kill_tiles(self):
         return [player.head for player in self.context.get_active_players() if player.length < self.context.get_myself().length]
