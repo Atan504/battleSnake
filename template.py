@@ -4,6 +4,55 @@ from api import *
 def manhattan_distance(coord, coord2):
     return abs(coord[0] - coord2[0]) + abs(coord[1] - coord2[1])
 
+DANGER_DISTANCE = 1
+MAP_SIZE = 12
+
+def is_in_map(coord: Tuple[int, int], map_size: int) -> bool:
+    return 0 <= coord[0] < map_size and 0 <= coord[1] < map_size
+
+def get_surrounding_tiles(danger_distance: int, player_head : Tuple[int, int]) -> List[Tuple[int, int]]:
+    surrounding_tiles : List[Tuple[int, int]] = []
+    start_x = player_head[0]
+    start_y = player_head[1]
+    for i in range(-danger_distance,danger_distance+1):
+        for j in range(-danger_distance,danger_distance+1):
+            if is_in_map((start_x + i, start_y + j), MAP_SIZE):
+                surrounding_tiles.append((start_x + i, start_y + j))
+    return surrounding_tiles
+
+def get_danger_map_for_player(danger_distance: int, player_heads: Tuple[int, int]) -> list[tuple[tuple[int,int], int]]:
+    danger_list : list[tuple[tuple[int,int], int]] = []
+    surrounding_tiles = get_surrounding_tiles(danger_distance, player_heads)
+    for surrounding_tile in surrounding_tiles:
+        danger_list.append((surrounding_tile, manhattan_distance(surrounding_tile, player_heads)))
+    return danger_list
+
+def get_total_danger_map(danger_maps : list[tuple[tuple[int, int], int]]) -> list[tuple[tuple[int,int],int]]:
+    total_danger_map = [tile for one_map in danger_maps for tile in one_map]
+    print(total_danger_map)
+    filtered_danger_map : list[tuple[tuple[int, int], int]] = []
+
+    for i, tile in enumerate(total_danger_map):
+        has_got_in : bool = False
+        for tile_2 in total_danger_map[i+2::]:
+            print(tile_2)
+            print(tile)
+            if tile[0] == tile_2[0]:
+                filtered_danger_map.append(min(tile,tile_2,key=lambda x: x[1]))
+                total_danger_map.remove(tile_2)
+                has_got_in = True
+        if not has_got_in:
+            filtered_danger_map.append(tile)
+    return filtered_danger_map
+
+
+if __name__ == '__main__':
+    # print([((0, 0), 0), ((0, 1), 1), ((0, 2), 2), ((1, 0), 1), ((1, 1), 2), ((1, 2), 3), ((2, 0), 2), ((2, 1), 3), ((2, 2), 4)][4::])
+    print(get_total_danger_map(
+        [get_danger_map_for_player(2,(0,0)),get_danger_map_for_player(2,(0,1))]
+    ))
+
+
 
 class MyBot(CodeBattlesBot):
     times = []
