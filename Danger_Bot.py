@@ -45,12 +45,27 @@ def get_total_danger_map(danger_maps : list[tuple[tuple[int, int], int]]) -> lis
             filtered_danger_map.append(tile)
     return filtered_danger_map
 
+def distance_direction_from_self(body: list[tuple[int, int]], player_head: tuple[int,int]) -> dict[str, int]:
+    direction_weight : dict[str, int] = {"D" : MAP_SIZE, "U" : MAP_SIZE, "L" : MAP_SIZE, "R" : MAP_SIZE}
+    for i in range(0, player_head[0]):
+        if (player_head[0],i) in body:
+            direction_weight["D"] = min(abs(player_head[1] - i), direction_weight["D"])
+    for i in range(player_head[0], MAP_SIZE):
+        if (player_head[0], i) in body:
+            direction_weight["U"] = min(abs(i - player_head[1]), direction_weight["U"])
+    for i in range(0,player_head[1]):
+        if (i,player_head[1]) in body:
+            direction_weight["L"] = min(abs(player_head[0] - i), direction_weight["L"])
+    for i in range(player_head[1], MAP_SIZE):
+        if (i,player_head[1]) in body:
+            direction_weight["R"] = min(abs(i - player_head[0]), direction_weight["R"])
+    print(direction_weight)
+    return direction_weight
+
 
 if __name__ == '__main__':
     # print([((0, 0), 0), ((0, 1), 1), ((0, 2), 2), ((1, 0), 1), ((1, 1), 2), ((1, 2), 3), ((2, 0), 2), ((2, 1), 3), ((2, 2), 4)][4::])
-    print(get_total_danger_map(
-        [get_danger_map_for_player(2,(0,0)),get_danger_map_for_player(2,(0,1))]
-    ))
+    print(distance_direction_from_self([(0,5), (2,5),(1,0),(1,12)],(1,5)))
 
 
 
