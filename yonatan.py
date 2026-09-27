@@ -62,7 +62,9 @@ class MyBot(CodeBattlesBot):
         return res
 
     def is_valid_dir(self, dir):
-        coords = self.get_all_options(self.my_head).get(dir)
+        return self.is_valid(self.get_all_options(self.my_head).get(dir))
+
+    def is_valid(self, coords):
         if coords in self.context.get_occupied_tiles():
             return False
         if not self.context.in_bounds(coords):
@@ -84,17 +86,42 @@ class MyBot(CodeBattlesBot):
         else:
             return self.nearest_tile([player.head for player in self.context.get_active_players() if player is not self.me])
 
+    def get_space(self, space: list[list[bool]]):
+
+        if len(space) >= 50:
+            return space
+        ad = []
+        for tile in space:
+            ad.extend([t for t in self.get_all_options(tile).values() if self.is_valid(t)])
+        for tile in ad:
+            space.add(tile)
+        return self.get_space(space)
+
+    SPACE_FACTOR = 20
+
+    def space_weights(self):
+        res = {"U": 0, "D": 0, "L": 0, "R": 0}
+
+        for dir, tile in self.get_all_options(self.my_head).items():
+            res[dir] = len(self.get_space({tile})) / 50 * self.SPACE_FACTOR
+        self.context.log_info(str(res))
+        return res
+
+    def add_weights(self, w1: dict[str, int], w2: dict[str, int]):
+        return {direction: weight + w2[direction] for direction, weight in w1.items()}
+
     def run(self) -> None:
         self.initialize_variables()
         goal = self.get_goal()
         # self.context.log_info(str(goal))
         dirs = self.goto(goal)
         move = "U"
+        # dirs = self.add_weights(dirs, self.space_weights())
         dirs = self.filter_non_weighted(dirs)
         dirs = self.filter_non_valid(dirs)
         if not self.is_non_weighted(dirs):
             move = random.choices(list(dirs.keys()), weights=list(dirs.values()), k=1)
-        self.context.log_info(str(self.get_death_tiles()))
+        # self.context.log_info(str(self.get_death_tiles()))
         self.context.set_direction(move[0])
 
     def setup(self) -> None:
