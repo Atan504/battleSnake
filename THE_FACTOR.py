@@ -133,15 +133,12 @@ class MyBot(CodeBattlesBot):
             if direction_weights[self.direction_to_letter[x_move]] != 0:
                 direction_weights[self.direction_to_letter[x_move]] += abs(x_direction)
                 direction_weights[self.direction_to_letter[x_move]] *= HEALTH_FACTOR
-                self.context.log_info("X move:" + str(x_move))
 
         if y_direction != 0:
             y_move = (0, y_direction // abs(y_direction))
             if direction_weights[self.direction_to_letter[y_move]] != 0:
                 direction_weights[self.direction_to_letter[y_move]] += abs(y_direction)
                 direction_weights[self.direction_to_letter[y_move]] *= HEALTH_FACTOR
-                self.context.log_info("Y move:" + str(y_move))
-        self.context.log_info(str(direction_weights))
 
         options = self.get_available_options()
         directions = []
